@@ -55,7 +55,7 @@ int main(int argi, char **argv)
 	/* get first line */
 	if (fgets(puffer,4096,filepointer_1)!=NULL)
 	{
-		char * eol = strsep(puffer,'\n','\r');//use strsep instead? man strtok: by one of bytes in delim
+		char * eol = rindex(puffer,'\n');//use strsep instead? man strtok: by one of bytes in delim
 		if (eol!=NULL) *eol='\0';
 		eol = rindex(puffer,'\r');
 		if (eol!=NULL) *eol='\0';
