@@ -8,6 +8,8 @@ char * filename_2 = NULL;
 char * rowname_2 = NULL;
 char * output = NULL;
 char * puffer = NULL;
+char * ids[0];
+int numberoflines = 0;
 
 void loadarguments(int argi, char **argv)
 {
@@ -17,25 +19,20 @@ void loadarguments(int argi, char **argv)
 		exit(0);
 	}
 	
-	filename_1 = (char *)malloc(sizeof(char)*strlen(argv[1])+1);
-	strcpy(filename_1,argv[1]);
-	rowname_1 = (char *)malloc(sizeof(char)*strlen(argv[2])+1);
-	strcpy(rowname_1,argv[2]);
-	filename_2 = (char *)malloc(sizeof(char)*strlen(argv[3])+1);
-	strcpy(filename_2,argv[3]);
-	rowname_2 = (char *)malloc(sizeof(char)*strlen(argv[4])+1);
-	strcpy(rowname_2,argv[4]);
-	output = (char *)malloc(sizeof(char)*strlen(argv[5])+1);
-	strcpy(output,argv[5]);
+	filename_1 = strdup(argv[1]);
+	rowname_1 = strdup(argv[2]);
+	filename_2 = strdup(argv[3]);
+	rowname_2 = strdup(argv[4]);
+	output = strdup(argv[5]);
 }
 
 void test_loadarguments(int argi, char **argv)
 {
-	filename_1 = "imdb.tsv";
-	rowname_1 = "imdb";
-	filename_2 = "imdb2.tsv";
-	rowname_2 = "IMDb ID";
-	output = "output.tsv";
+	filename_1 = strdup("imdb.tsv");
+	rowname_1 = strdup("imdb");
+	filename_2 = strdup("imdb2.tsv");
+	rowname_2 = strdup("IMDb ID");
+	output = strdup("output.tsv");
 }
 
 int getrownumber(char * filename,char * rowname)
@@ -79,16 +76,26 @@ int getrownumber(char * filename,char * rowname)
 	return rowtoget;
 }
 
-void printfile(char * filename)
+void printfile(char * filename, int rowtoget)
 {
+	numberoflines = 0;
+	int i = 0;
+	char * temp = NULL;
+	temp = (char *)malloc(sizeof(char)*20);
 	FILE * filepointer;
 	filepointer = fopen(filename,"r");
 	puffer = (char *)malloc(sizeof(char)*1024);
+	fgets(puffer,4096,filepointer);//delete header
 	while (fgets(puffer,4096,filepointer)!=NULL)
 	{
 		char * eol = rindex(puffer,'\n');
 		if (eol != NULL) *eol='\0';
-		printf("%s\n",puffer);
+		
+		printf("line: %s\n",puffer);
+		temp = strtok(puffer, "\t");
+		for(i=0; i < rowtoget; i++) temp = strtok(NULL, "\t");
+		ids[numberoflines++]=strdup(temp);
+		printf("id: %s\n",ids[numberoflines-1]);
 	}
 	free(puffer);
 	fclose(filepointer);
@@ -101,6 +108,8 @@ void Free()
 	free(rowname_1);
 	free(rowname_2);
 	free(output);
+	
+	while(numberoflines > 0) free(ids[numberoflines--]);
 }
 
 int main(int argi, char **argv)
@@ -111,15 +120,15 @@ int main(int argi, char **argv)
 	printf("\e[1;1H\e[2J");	
 	
 	int rowtoget_1 = getrownumber(filename_1, rowname_1);
-	printf("index of row of %s to get: %d\n", filename_1, rowtoget_1);
-	printfile(filename_1);
+	printf("index of row from %s to get: %d\n", filename_1, rowtoget_1);
+	printfile(filename_1,rowtoget_1);
 	
 	printf("\n");	
 	
 	int rowtoget_2 = getrownumber(filename_2, rowname_2);
-	printf("index of row of %s to get: %d\n", filename_2, rowtoget_2);
-	printfile(filename_2);
+	printf("index of row from %s to get: %d\n", filename_2, rowtoget_2);
+	printfile(filename_2,rowtoget_2);
 	
-	Free();//comment out for testing
+	Free();
 	return 0;
 }
