@@ -139,7 +139,7 @@ int main(int argi, char **argv)
 	printf("\n");
 	
 	int rowtoget_2 = getrownumber(filename_2, rowname_2);
-	printf("index of row from %s to get: %d\n", filename_1, rowtoget_1);
+	printf("index of row from %s to get: %d\n", filename_2, rowtoget_2);
 
 	Free();
 	return 0;
