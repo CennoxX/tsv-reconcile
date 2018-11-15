@@ -6,6 +6,8 @@ char * filename_1 = NULL;
 char * rowname_1 = NULL;
 char * filename_2 = NULL;
 char * rowname_2 = NULL;
+char ** ids_1 = NULL;
+char ** ids_2 = NULL;
 char * output = NULL;
 char * puffer = NULL;
 char * ids[0];
@@ -64,7 +66,7 @@ int getrownumber(char * filename,char * rowname)
 	return rowtoget;
 }
 
-void printfile(char * filename, int rowtoget)
+char ** getidarray(char * filename, int rowtoget)
 {
 	numberoflines = 0;
 	int i = 0;
@@ -79,14 +81,14 @@ void printfile(char * filename, int rowtoget)
 		char * eol = rindex(puffer,'\n');
 		if (eol != NULL) *eol='\0';
 		
-		printf("line: %s\n",puffer);
+		printf("%s\n",puffer);
 		temp = strtok(puffer, "\t");
 		for(i=0; i < rowtoget; i++) temp = strtok(NULL, "\t");
 		ids[numberoflines++]=strdup(temp);
-		printf("id: %s\n",ids[numberoflines-1]);
 	}
 	free(puffer);
 	fclose(filepointer);
+	return ids;
 }
 
 void Free()
@@ -96,27 +98,35 @@ void Free()
 	free(rowname_1);
 	free(rowname_2);
 	free(output);
-	
 	while(numberoflines > 0) free(ids[numberoflines--]);
 }
 
+int cmpstr(const void *p1, const void *p2)
+{
+	return strcmp(* (char * const *) p1, * (char * const *) p2);
+}
+	
 int main(int argi, char **argv)
 {
+	int i = 0;
 	loadarguments(argi, argv);//comment out for testing
 	//test_loadarguments(argi, argv);
-	
 	printf("\e[1;1H\e[2J");	
 	
 	int rowtoget_1 = getrownumber(filename_1, rowname_1);
 	printf("index of row from %s to get: %d\n", filename_1, rowtoget_1);
-	printfile(filename_1,rowtoget_1);
-	
-	printf("\n");	
+	ids_1 = getidarray(filename_1,rowtoget_1);
+	printf("\nIDs from %s:\n",filename_1);
+	for(i=0; i < numberoflines; i++) printf("%s\n",ids_1[i]);
+	printf("\nsorted IDs:\n");
+	qsort(ids_1, numberoflines, sizeof(char*), cmpstr);	
+	for(i=0; i < numberoflines; i++) printf("%s\n",ids_1[i]);
+	printf("\n");
 	
 	int rowtoget_2 = getrownumber(filename_2, rowname_2);
-	printf("index of row from %s to get: %d\n", filename_2, rowtoget_2);
-	printfile(filename_2,rowtoget_2);
-	
+	printf("index of row from %s to get: %d\n", filename_1, rowtoget_1);
+	ids_2 = getidarray(filename_2,rowtoget_2);
+
 	Free();
 	return 0;
 }
