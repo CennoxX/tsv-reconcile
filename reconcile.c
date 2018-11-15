@@ -70,7 +70,6 @@ int getrownumber(char * filename,char * rowname)
 			}
 		}
 	}
-	free(temp);
 	free(puffer);
 	fclose(filepointer);
 	return rowtoget;
