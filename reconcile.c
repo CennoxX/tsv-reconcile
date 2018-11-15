@@ -37,7 +37,6 @@ void test_loadarguments(int argi, char **argv)
 
 int getrownumber(char * filename,char * rowname)
 {
-	int test = 0;
 	int rowtoget = 0;
 	char * temp = NULL;
 	temp = (char *)malloc(sizeof(char)*20);
@@ -54,20 +53,10 @@ int getrownumber(char * filename,char * rowname)
 		if (eol != NULL) *eol='\0';
 		
 		temp = strtok(puffer, "\t");
-		if(strcmp(temp,rowname) == 0)//is 0 (s1 equal to s2), <0 (s1 less than s2) or >0 (s1 greater than s2)
-		{
-			rowtoget=0;
-		}
-		else
+		while(strcmp(temp,rowname) != 0)
 		{
 			rowtoget++;
-			test = strcmp(strtok(NULL, "\t"),rowname);
-			while(test != 0)
-			{
-				rowtoget++;
-				temp = strtok(NULL, "\t");
-				test = strcmp(temp,rowname);
-			}
+			temp = strtok(NULL, "\t");
 		}
 	}
 	free(puffer);
