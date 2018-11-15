@@ -6,12 +6,12 @@ char * filename_1 = NULL;
 char * rowname_1 = NULL;
 char * filename_2 = NULL;
 char * rowname_2 = NULL;
-char ** ids_1 = NULL;
-char ** ids_2 = NULL;
+char ** list_1 = NULL;
 char * output = NULL;
 char * puffer = NULL;
-char * ids[0];
+char * lines[0];
 int numberoflines = 0;
+int idrowtoget = 0;
 
 void loadarguments(int argi, char **argv)
 {
@@ -66,29 +66,25 @@ int getrownumber(char * filename,char * rowname)
 	return rowtoget;
 }
 
-char ** getidarray(char * filename, int rowtoget)
+char ** getlinesarray(char * filename)
 {
 	numberoflines = 0;
-	int i = 0;
-	char * temp = NULL;
-	temp = (char *)malloc(sizeof(char)*20);
 	FILE * filepointer;
 	filepointer = fopen(filename,"r");
 	puffer = (char *)malloc(sizeof(char)*1024);
-	fgets(puffer,4096,filepointer);//delete header
+	fgets(puffer,4096,filepointer);
 	while (fgets(puffer,4096,filepointer)!=NULL)
 	{
 		char * eol = rindex(puffer,'\n');
 		if (eol != NULL) *eol='\0';
+		eol = rindex(puffer,'\r');
+		if (eol != NULL) *eol='\0';
 		
-		printf("%s\n",puffer);
-		temp = strtok(puffer, "\t");
-		for(i=0; i < rowtoget; i++) temp = strtok(NULL, "\t");
-		ids[numberoflines++]=strdup(temp);
+		lines[numberoflines++]=strdup(puffer);
 	}
 	free(puffer);
 	fclose(filepointer);
-	return ids;
+	return lines;
 }
 
 void Free()
@@ -98,12 +94,30 @@ void Free()
 	free(rowname_1);
 	free(rowname_2);
 	free(output);
-	while(numberoflines > 0) free(ids[numberoflines--]);
+	while(numberoflines > 0) free(lines[numberoflines--]);
 }
 
-int cmpstr(const void *p1, const void *p2)
+int cmpids(const void *p1, const void *p2)
 {
-	return strcmp(* (char * const *) p1, * (char * const *) p2);
+	int i = 0;
+	char * temp_1 = NULL;
+	temp_1 = (char *)malloc(sizeof(char)*200);//td: set on line length, free temp_1 & temp_2
+	char * ptochange1 = NULL;
+	ptochange1 = (char *)malloc(sizeof(char)*200);
+	strcpy(ptochange1,* (char * const *) p1);
+	temp_1 = strtok(ptochange1, "\t");
+	for(i=0; i < idrowtoget; i++) temp_1 = strtok(NULL, "\t");
+	
+	char * temp_2 = NULL;
+	temp_2 = (char *)malloc(sizeof(char)*200);
+	char * ptochange2 = NULL;
+	ptochange2 = (char *)malloc(sizeof(char)*200);
+	strcpy(ptochange2,* (char * const *) p2);
+	temp_2 = strtok(ptochange2, "\t");
+	for(i=0; i < idrowtoget; i++) temp_2 = strtok(NULL, "\t");
+	free(ptochange1);
+	free(ptochange2);
+	return strcmp(temp_1, temp_2);
 }
 	
 int main(int argi, char **argv)
@@ -115,17 +129,17 @@ int main(int argi, char **argv)
 	
 	int rowtoget_1 = getrownumber(filename_1, rowname_1);
 	printf("index of row from %s to get: %d\n", filename_1, rowtoget_1);
-	ids_1 = getidarray(filename_1,rowtoget_1);
+	list_1 = getlinesarray(filename_1);
+	idrowtoget = rowtoget_1;
 	printf("\nIDs from %s:\n",filename_1);
-	for(i=0; i < numberoflines; i++) printf("%s\n",ids_1[i]);
+	for(i=0; i < numberoflines; i++) printf("%s\n",list_1[i]);
 	printf("\nsorted IDs:\n");
-	qsort(ids_1, numberoflines, sizeof(char*), cmpstr);	
-	for(i=0; i < numberoflines; i++) printf("%s\n",ids_1[i]);
+	qsort(list_1, numberoflines, sizeof(char*), cmpids);	
+	for(i=0; i < numberoflines; i++) printf("%s\n",list_1[i]);
 	printf("\n");
 	
 	int rowtoget_2 = getrownumber(filename_2, rowname_2);
 	printf("index of row from %s to get: %d\n", filename_1, rowtoget_1);
-	ids_2 = getidarray(filename_2,rowtoget_2);
 
 	Free();
 	return 0;
