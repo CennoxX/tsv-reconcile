@@ -101,7 +101,7 @@ int cmpids(const void *p1, const void *p2)
 {
 	int i = 0;
 	char * temp_1 = NULL;
-	temp_1 = (char *)malloc(sizeof(char)*200);//td: set on line length, free temp_1 & temp_2
+	temp_1 = (char *)malloc(sizeof(char)*200);//td: set on line length, free used variables
 	char * ptochange1 = NULL;
 	ptochange1 = (char *)malloc(sizeof(char)*200);
 	strcpy(ptochange1,* (char * const *) p1);
@@ -115,8 +115,6 @@ int cmpids(const void *p1, const void *p2)
 	strcpy(ptochange2,* (char * const *) p2);
 	temp_2 = strtok(ptochange2, "\t");
 	for(i=0; i < idrowtoget; i++) temp_2 = strtok(NULL, "\t");
-	free(ptochange1);
-	free(ptochange2);
 	return strcmp(temp_1, temp_2);
 }
 	
