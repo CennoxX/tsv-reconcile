@@ -117,14 +117,38 @@ int cmpids(const void *p1, const void *p2)
 	for(i=0; i < idrowtoget; i++) temp_2 = strtok(NULL, "\t");
 	return strcmp(temp_1, temp_2);
 }
-	
+int fileExists(char *filename)
+{
+	FILE * filepointer;
+	if(filepointer = fopen(filename, "r"))
+	{
+		fclose(filepointer);
+		return 1;
+	}
+	return 0;
+}
+
 int main(int argi, char **argv)
 {
 	int i = 0;
 	loadarguments(argi, argv);//comment out for testing
 	//test_loadarguments(argi, argv);
 	printf("\e[1;1H\e[2J");	
-	
+
+	printf("+---------------------------------------------------+\n");
+	printf("|                     Reconcile                     |\n");
+	printf("|                                                   |\n");
+	printf("|       reconcile two tab spearated value files     |\n");
+	printf("|             by one shared row (e.g. imdb)         |\n");
+	printf("|                                                   |\n");
+	printf("+---------------------------------------------------+\n");
+
+	if(!fileExists(filename_1))
+	{
+		printf("%s existiert nicht\n", filename_1);
+		return -1;
+	}
+
 	int rowtoget_1 = getrownumber(filename_1, rowname_1);
 	printf("index of row from %s to get: %d\n", filename_1, rowtoget_1);
 	list_1 = getlinesarray(filename_1);
@@ -135,6 +159,12 @@ int main(int argi, char **argv)
 	qsort(list_1, numberoflines, sizeof(char*), cmpids);	
 	for(i=0; i < numberoflines; i++) printf("%s\n",list_1[i]);
 	printf("\n");
+
+	if(!fileExists(filename_2))
+	{
+		printf("%s existiert nicht\n", filename_2);
+		return -1;
+	}
 	
 	int rowtoget_2 = getrownumber(filename_2, rowname_2);
 	printf("index of row from %s to get: %d\n", filename_2, rowtoget_2);
