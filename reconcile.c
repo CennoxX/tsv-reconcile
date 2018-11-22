@@ -2,13 +2,14 @@
 #include <string.h>
 #include <stdio.h>
 
+#define LINELENGTH 1024
+#define IDLENGTH 20
+
 char * filename_1 = NULL;
 char * rowname_1 = NULL;
 char * filename_2 = NULL;
 char * rowname_2 = NULL;
-char ** list_1 = NULL;
 char * output = NULL;
-char * puffer = NULL;
 char * lines[0];
 int numberoflines = 0;
 int idrowtoget = 0;
@@ -37,17 +38,32 @@ void test_loadarguments(int argi, char **argv)
 	output = strdup("output.tsv");
 }
 
+
+void fileExists(char *filename)
+{
+	FILE * filepointer;
+	if(filepointer = fopen(filename, "r"))
+	{
+		fclose(filepointer);
+	}
+	else
+	{
+		printf("%s existiert nicht\n", filename);
+		exit(0);
+	}
+}
 int getrownumber(char * filename,char * rowname)
 {
+	char * puffer = NULL;
 	int rowtoget = 0;
 	char * temp = NULL;
-	temp = (char *)malloc(sizeof(char)*20);
-	puffer = (char *)malloc(sizeof(char)*1024);
+	temp = (char *)malloc(sizeof(char)*IDLENGTH);
+	puffer = (char *)malloc(sizeof(char)*LINELENGTH);
 	
 	FILE * filepointer;
 	filepointer = fopen(filename,"r");
 	
-	if (fgets(puffer,4096,filepointer)!=NULL)
+	if (fgets(puffer,LINELENGTH,filepointer)!=NULL)
 	{
 		char * eol = rindex(puffer,'\n');
 		if (eol != NULL) *eol='\0';
@@ -68,12 +84,13 @@ int getrownumber(char * filename,char * rowname)
 
 char ** getlinesarray(char * filename)
 {
+	char * puffer = NULL;
 	numberoflines = 0;
 	FILE * filepointer;
 	filepointer = fopen(filename,"r");
-	puffer = (char *)malloc(sizeof(char)*1024);
-	fgets(puffer,4096,filepointer);
-	while (fgets(puffer,4096,filepointer)!=NULL)
+	puffer = (char *)malloc(sizeof(char)*LINELENGTH);
+	fgets(puffer,LINELENGTH,filepointer);
+	while (fgets(puffer,LINELENGTH,filepointer)!=NULL)
 	{
 		char * eol = rindex(puffer,'\n');
 		if (eol != NULL) *eol='\0';
@@ -87,6 +104,24 @@ char ** getlinesarray(char * filename)
 	return lines;
 }
 
+char * getidfromfile(const void *p)
+{
+	int i = 0;
+	char * temp = NULL;
+	temp = (char *)malloc(sizeof(char)*LINELENGTH);
+	char * ptochange = NULL;
+	ptochange = (char *)malloc(sizeof(char)*LINELENGTH);
+	strcpy(ptochange,* (char * const *) p);
+	temp = strtok(ptochange, "\t");
+	for(i=0; i < idrowtoget; i++) temp = strtok(NULL, "\t");
+	return temp;
+}
+
+int cmpids(const void *p1, const void *p2)
+{
+	return strcmp(getidfromfile(p1), getidfromfile(p2));
+}
+
 void Free()
 {
 	free(filename_1);
@@ -97,43 +132,13 @@ void Free()
 	while(numberoflines > 0) free(lines[numberoflines--]);
 }
 
-int cmpids(const void *p1, const void *p2)
-{
-	int i = 0;
-	char * temp_1 = NULL;
-	temp_1 = (char *)malloc(sizeof(char)*200);//td: set on line length, free used variables
-	char * ptochange1 = NULL;
-	ptochange1 = (char *)malloc(sizeof(char)*200);
-	strcpy(ptochange1,* (char * const *) p1);
-	temp_1 = strtok(ptochange1, "\t");
-	for(i=0; i < idrowtoget; i++) temp_1 = strtok(NULL, "\t");
-	
-	char * temp_2 = NULL;
-	temp_2 = (char *)malloc(sizeof(char)*200);
-	char * ptochange2 = NULL;
-	ptochange2 = (char *)malloc(sizeof(char)*200);
-	strcpy(ptochange2,* (char * const *) p2);
-	temp_2 = strtok(ptochange2, "\t");
-	for(i=0; i < idrowtoget; i++) temp_2 = strtok(NULL, "\t");
-	return strcmp(temp_1, temp_2);
-}
-int fileExists(char *filename)
-{
-	FILE * filepointer;
-	if(filepointer = fopen(filename, "r"))
-	{
-		fclose(filepointer);
-		return 1;
-	}
-	return 0;
-}
-
 int main(int argi, char **argv)
 {
 	int i = 0;
+	char ** lines_1 = NULL;
 	loadarguments(argi, argv);//comment out for testing
 	//test_loadarguments(argi, argv);
-	printf("\e[1;1H\e[2J");	
+	printf("\e[1;1H\e[2J");
 
 	printf("+---------------------------------------------------+\n");
 	printf("|                     Reconcile                     |\n");
@@ -143,29 +148,19 @@ int main(int argi, char **argv)
 	printf("|                                                   |\n");
 	printf("+---------------------------------------------------+\n");
 
-	if(!fileExists(filename_1))
-	{
-		printf("%s existiert nicht\n", filename_1);
-		return -1;
-	}
-
+	fileExists(filename_1);
 	int rowtoget_1 = getrownumber(filename_1, rowname_1);
 	printf("index of row from %s to get: %d\n", filename_1, rowtoget_1);
-	list_1 = getlinesarray(filename_1);
+	lines_1 = getlinesarray(filename_1);
 	idrowtoget = rowtoget_1;
-	printf("\nIDs from %s:\n",filename_1);
-	for(i=0; i < numberoflines; i++) printf("%s\n",list_1[i]);
-	printf("\nsorted IDs:\n");
-	qsort(list_1, numberoflines, sizeof(char*), cmpids);	
-	for(i=0; i < numberoflines; i++) printf("%s\n",list_1[i]);
+	printf("\nFile %s:\n",filename_1);
+	for(i=0; i < numberoflines; i++) printf("%s\n",lines_1[i]);
+	printf("\nFile sorted by IDs:\n");
+	qsort(lines_1, numberoflines, sizeof(char*), cmpids);	
+	for(i=0; i < numberoflines; i++) printf("%s\n",lines_1[i]);
 	printf("\n");
-
-	if(!fileExists(filename_2))
-	{
-		printf("%s existiert nicht\n", filename_2);
-		return -1;
-	}
 	
+	fileExists(filename_2);	
 	int rowtoget_2 = getrownumber(filename_2, rowname_2);
 	printf("index of row from %s to get: %d\n", filename_2, rowtoget_2);
 
