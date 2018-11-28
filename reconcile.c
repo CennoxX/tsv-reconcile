@@ -1,9 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 #define LINELENGTH 1024
-#define IDLENGTH 20
 
 char * filename_1 = NULL;
 char * rowname_1 = NULL;
@@ -11,6 +11,22 @@ char * filename_2 = NULL;
 char * rowname_2 = NULL;
 char * output = NULL;
 int idrowtoget = 0;
+
+void printtime(){
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	printf("%d:%d:%d: ", tm.tm_hour, tm.tm_min, tm.tm_sec);
+}
+
+void clear(){
+    #if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
+        system("clear");
+    #endif
+
+    #if defined(_WIN32) || defined(_WIN64)
+        system("cls");
+    #endif
+}
 
 void loadarguments(int argi, char **argv)
 {
@@ -27,7 +43,7 @@ void loadarguments(int argi, char **argv)
 	output = strdup(argv[5]);
 }
 
-void test_loadarguments(int argi, char **argv)
+void test_loadarguments()
 {
 	filename_1 = strdup("imdb.tsv");
 	rowname_1 = strdup("imdb");
@@ -45,6 +61,7 @@ void filecheck(char *filename)
 	}
 	else
 	{
+		printtime();
 		printf("%s existiert nicht oder der Zugriff auf die Datei wird verweigert.\n", filename);
 		exit(0);
 	}
@@ -55,7 +72,7 @@ int getrownumber(char * filename,char * rowname)
 	char * puffer = NULL;
 	int rowtoget = 0;
 	char * temp = NULL;
-	temp = (char *)malloc(sizeof(char)*IDLENGTH);
+	temp = (char *)malloc(sizeof(char)*LINELENGTH);
 	puffer = (char *)malloc(sizeof(char)*LINELENGTH);
 
 	FILE * filepointer;
@@ -80,7 +97,32 @@ int getrownumber(char * filename,char * rowname)
 	return rowtoget;
 }
 
-char ** getlinesarray(char * filename, int *numberoflines, int sourcerow)
+char *getsortedline(char * puffer, int rowtoget)
+{
+	char *toktemp = strtok(puffer, "\t");
+	char *row = malloc(sizeof(char) * LINELENGTH);
+	strcpy(row, "");
+	char *imdbId = malloc(sizeof(char) * LINELENGTH);
+	int i = 0;
+	while(toktemp != NULL)
+	{
+		if(i == rowtoget)
+		{
+			strcpy(imdbId, toktemp);
+		}
+		else 
+		{
+			strcat(row, "\t");
+			strcat(row, toktemp);
+		}
+		toktemp = strtok(NULL, "\t");
+		i++;
+	}
+	strcat(imdbId, row);
+	return imdbId;
+}
+
+char ** getlinesarray(char * filename, int *numberoflines, int rowtoget)
 {
 	char * puffer = NULL;
 	char ** lines = NULL;		  
@@ -89,7 +131,6 @@ char ** getlinesarray(char * filename, int *numberoflines, int sourcerow)
 	filepointer = fopen(filename,"r");
 	puffer = (char *) malloc(sizeof(char)*LINELENGTH);
 	fgets(puffer,LINELENGTH,filepointer);//exclude the first line
-
 	while (fgets(puffer,LINELENGTH,filepointer) != NULL)
 	{
 		char * eol = rindex(puffer,'\n');
@@ -98,28 +139,7 @@ char ** getlinesarray(char * filename, int *numberoflines, int sourcerow)
 		if (eol != NULL) *eol='\0';
 		*numberoflines = *numberoflines + 1;
 		lines = realloc(lines, sizeof(char) * LINELENGTH * *numberoflines);//erweitert char ** immer dynamisch um ein Element
-		char * tokTemp = strtok(puffer, "\t");
-		int i = 0;
-		char *row = malloc(sizeof(char) * LINELENGTH);
-		strcpy(row, "");
-		char *imdbId = malloc(sizeof(char) * LINELENGTH);
-		while(tokTemp != NULL)
-		{
-			if(i == sourcerow)
-			{
-				strcpy(imdbId, tokTemp);
-			}
-			else 
-			{
-				strcat(row, tokTemp);
-				strcat(row, "\t");
-			}
-			tokTemp = strtok(NULL, "\t");
-			i++;
-		}
-		strcat(imdbId, "\t");
-		strcat(imdbId, row);
-		lines[*numberoflines - 1] = strdup(imdbId);
+		lines[*numberoflines - 1] = getsortedline(puffer,rowtoget);
 	}
 	free(puffer);
 	fclose(filepointer);
@@ -128,19 +148,20 @@ char ** getlinesarray(char * filename, int *numberoflines, int sourcerow)
 
 char * getidfromfile(const void *p)
 {
-	int i = 0;
 	char * temp = NULL;
 	temp = (char *)malloc(sizeof(char)*LINELENGTH);
-	char * ptochange = NULL;
-	ptochange = (char *)malloc(sizeof(char)*LINELENGTH);
-	strcpy(ptochange,* (char * const *) p);
-	temp = strtok(ptochange, "\t");
-	for(i=0; i < idrowtoget; i++) temp = strtok(NULL, "\t");
+	strcpy(temp,* (char * const *) p);
+	strtok(temp, "\t");	
 	return temp;
 }
-int cmpids(const void *p1, const void *p2)
+int cmpids(const void *a, const void *b)
 {
-	return strcmp(getidfromfile(p1), getidfromfile(p2));
+	return strcmp(getidfromfile(a), getidfromfile(b));
+}
+
+int cmplines(const void *a, const void *b)
+{
+	return strcmp(*(const char**)a, *(const char**)b);
 }
 
 void Free()
@@ -155,10 +176,10 @@ void Free()
 int main(int argi, char **argv)
 {
 	int i = 0;
-	if(strcmp(strdup(argv[1]),"--test") == 0) test_loadarguments(argi, argv);
+	if(strcmp(argv[1],"--test") == 0) test_loadarguments();
 	else loadarguments(argi, argv);
 
-	printf("\e[1;1H\e[2J");//clear terminal
+	clear();
 	printf("+---------------------------------------------------+\n");
 	printf("|                     Reconcile                     |\n");
 	printf("|                                                   |\n");
@@ -166,32 +187,36 @@ int main(int argi, char **argv)
 	printf("|             by one shared row (e.g. imdb)         |\n");
 	printf("|                                                   |\n");
 	printf("+---------------------------------------------------+\n");
-
+	
+	printtime();
+	printf("reading %s …\n", filename_1);
 	filecheck(filename_1);
 	int rowtoget_1 = getrownumber(filename_1, rowname_1);
-	printf("index of row from %s to get: %d\n", filename_1, rowtoget_1);
 	int numberoflines_1 = 0;
 	char ** list_1 = getlinesarray(filename_1, &numberoflines_1, rowtoget_1);
-	idrowtoget = rowtoget_1;
-	printf("\nIDs from %s:\n", filename_1);
+	//for(i=0; i < numberoflines_1; i++) printf("%s\n",list_1[i]);
+	
+	printtime();
+	printf("sorting %s …\n", filename_1);
+	qsort(list_1, numberoflines_1, sizeof(char*), cmplines);
+	//for(i=0; i < numberoflines_1; i++) printf("%s\n",list_1[i]);
+	
+	printtime();
+	printf("searching %s …\n", filename_1);
+	char *item = "nm0197824";//test
+	item = bsearch (&item, list_1, numberoflines_1, sizeof (char*), cmpids);
+	printtime();
+	if(item != NULL) printf("found item: '%s'\n", *(const char**)item);
+	else printf("item %s could not be found\n", item);
 
-	for(i=0; i < numberoflines_1; i++)
-	{
-		printf("%s\n",list_1[i]);
-	}
-
+	printtime();
+	printf("reading %s …\n", filename_2);
 	filecheck(filename_2);
 	int rowtoget_2 = getrownumber(filename_2, rowname_2);
-	printf("index of row %s to get: %d\n", filename_2, rowtoget_2);
 	int numberoflines_2 = 0;
 	char ** list_2 = getlinesarray(filename_2, &numberoflines_2, rowtoget_2);
-	idrowtoget = rowtoget_2;
-	printf("\nIDs from %s\n", filename_2);
-
-	for(i = 0 ; i < numberoflines_2 ; i++)
-	{
-		printf("%s\n", list_2[i]);
-	}
+	//for(i = 0 ; i < numberoflines_2 ; i++) printf("%s\n", list_2[i]);
+	
 	Free();
 	return 0;
 }
