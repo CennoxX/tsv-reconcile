@@ -236,8 +236,9 @@ char ** comparelines(char **list_1, char** list_2, int numberoflines_1, int numb
 	return lines;
 }
 
-void writeToFile(char ** lines, char * filename, int numberOfLines)
+void writetofile(char ** lines, char * filename, int numberOfLines)
 {
+	int i = 0;
 	FILE *filepointer;
 	filepointer = fopen(filename, "w");
 	if(filepointer == NULL)
@@ -246,7 +247,7 @@ void writeToFile(char ** lines, char * filename, int numberOfLines)
 		return;
 	}
 
-	for(int i = 0 ; i < numberOfLines ; i++)
+	for(i = 0 ; i < numberOfLines ; i++)
 	{
 		fprintf(filepointer, "%s\n", lines[i]);
 	}
@@ -300,7 +301,7 @@ int main(int argi, char **argv)
 
 	printtime();
 	printf("write to File %s\n", output);
-	writeToFile(comparedlines, output, numberofcombinedlines);
+	writetofile(comparedlines, output, numberofcombinedlines);
 		
 	Free();
 	return 0;
