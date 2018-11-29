@@ -215,12 +215,11 @@ char ** comparelines(char **list_1, char** list_2, int numberoflines_1, int numb
 		//item = "nm1631269";//test
 		item = getidfromlinechar(list_2[i]);
 		item = bsearch (&item, list_1, numberoflines_1, sizeof (char*), cmpids);//search for this id
-		printtime();
 		if(item != NULL)
 		{
 			char *temp = malloc(sizeof(char) * 2 * LINELENGTH);
 			*numberoflines = *numberoflines + 1;
-			printf("found item: '%s'\n", *(const char**)item);
+			//printf("found item: '%s'\n", *(const char**)item);
 			lines = realloc(lines, sizeof(char) * LINELENGTH * 2 * *numberoflines);//erweitert char ** immer dynamisch um ein Element
 			strcat(temp, list_2[i]);
 			strcat(temp, "\t");
@@ -237,6 +236,23 @@ char ** comparelines(char **list_1, char** list_2, int numberoflines_1, int numb
 	return lines;
 }
 
+void writeToFile(char ** lines, char * filename, int numberOfLines)
+{
+	FILE *filepointer;
+	filepointer = fopen(filename, "w");
+	if(filepointer == NULL)
+	{
+		printf("File %s does not exists\n", filename);
+		return;
+	}
+
+	for(int i = 0 ; i < numberOfLines ; i++)
+	{
+		fprintf(filepointer, "%s\n", lines[i]);
+	}
+
+	fclose(filepointer);
+}
 int main(int argi, char **argv)
 {
 	int i = 0;
@@ -277,8 +293,14 @@ int main(int argi, char **argv)
 	printf("searching %s …\n", filename_1);
 	int numberofcombinedlines = 0;	
 	char ** comparedlines = comparelines(list_1, list_2, numberoflines_1, numberoflines_2, &numberofcombinedlines);
-	for(i = 0 ; i < numberofcombinedlines ; i++) printf("%s\n", comparedlines[i]);
+
+	//for(i = 0 ; i < numberofcombinedlines ; i++) printf("%s\n", comparedlines[i]);
+	printtime();
 	printf("Successfull ended!\n");
+
+	printtime();
+	printf("write to File %s\n", output);
+	writeToFile(comparedlines, output, numberofcombinedlines);
 		
 	Free();
 	return 0;
