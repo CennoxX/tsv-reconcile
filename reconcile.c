@@ -290,7 +290,7 @@ int main(int argi, char **argv)
 	int numberofcombinedlines = 0;
 	char ** comparedlines = comparelines(list_1, list_2, numberoflines_1, numberoflines_2, &numberofcombinedlines);
 	//for(i = 0 ; i < numberofcombinedlines ; i++) printf("%s\n", comparedlines[i]);
-	printf("\rsearching %s 100%%\n", filename_1);
+	printf("\rsearching %s 100%%\n", filename_2);
 	
 	//write output
 	writetofile(comparedlines, output, numberofcombinedlines);
