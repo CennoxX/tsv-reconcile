@@ -122,6 +122,25 @@ char *getsortedline(char * puffer, int rowtoget)
 	return imdbId;
 }
 
+char *removeRow(char * puffer, int rowtoget)
+{
+	char *toktemp = strtok(puffer, "\t");
+	char *row = malloc(sizeof(char) * LINELENGTH);
+	strcpy(row, "");
+	int i = 0;
+	while(toktemp != NULL)
+	{
+		if(i != rowtoget)
+		{
+			strcat(row, "\t");
+			strcat(row, toktemp);
+		}
+		toktemp = strtok(NULL, "\t");
+		i++;
+	}
+	return row;
+}
+
 char ** getlinesarray(char * filename, int *numberoflines, int rowtoget)
 {
 	char * puffer = NULL;
@@ -155,6 +174,17 @@ char * getidfromline(const void *p)
 	//printf("%s\n",(const char*)temp);
 	return temp;
 }
+
+char * getidfromlinechar(const char *p)
+{
+	char * temp = NULL;
+	temp = (char *)malloc(sizeof(char)*LINELENGTH);
+	strcpy(temp, p);
+	strtok(temp, "\t");
+	//printf("%s\n",(const char*)temp);
+	return temp;
+}
+
 int cmpids(const void *a, const void *b)
 {
 	return strcmp(getidfromline(a), getidfromline(b));
@@ -182,8 +212,8 @@ char ** comparelines(char **list_1, char** list_2, int numberoflines_1, int numb
 	char * item = NULL;
 	for(i=0; i < numberoflines_2; i++)
 	{
-		item = "nm1631269";//test
-		//item = getidfromline(list_2[i]);
+		//item = "nm1631269";//test
+		item = getidfromlinechar(list_2[i]);
 		item = bsearch (&item, list_1, numberoflines_1, sizeof (char*), cmpids);//search for this id
 		printtime();
 		if(item != NULL)
@@ -195,7 +225,8 @@ char ** comparelines(char **list_1, char** list_2, int numberoflines_1, int numb
 			strcat(temp, list_2[i]);
 			strcat(temp, "\t");
 			//cut imdb id before combining
-			strcat(temp, *(const char**)item);				
+			char *item2 = removeRow(*(char**)item, 0);
+			strcat(temp, item2);		
 			lines[*numberoflines - 1] = temp;
 		}
 		else 
@@ -244,7 +275,7 @@ int main(int argi, char **argv)
 	
 	printtime();
 	printf("searching %s …\n", filename_1);
-	int numberofcombinedlines = 0;
+	int numberofcombinedlines = 0;	
 	char ** comparedlines = comparelines(list_1, list_2, numberoflines_1, numberoflines_2, &numberofcombinedlines);
 	for(i = 0 ; i < numberofcombinedlines ; i++) printf("%s\n", comparedlines[i]);
 	printf("Successfull ended!\n");
