@@ -234,8 +234,8 @@ void writetofile(char ** lines, char * filename, int numberoflines)
 	filepointer = fopen(filename, "w");
 	if(filepointer == NULL)
 	{
-		printf("File %s does not exist or you do not have read access.\n", filename);
-		return;
+		printf("Der Zugriff auf die Datei %s wird verweigert.\n", filename);
+		exit(0);
 	}
 
 	for(i = 0 ; i < numberoflines ; i++)
