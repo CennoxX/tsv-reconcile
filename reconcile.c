@@ -35,7 +35,7 @@ void loadarguments(int argi, char **argv)
 		printf("format: %s <input file 1> <input row 1> <input file 2> <input row 2> <output file>\n",argv[0]);
 		exit(0);
 	}
-
+	
 	filename_1 = strdup(argv[1]);
 	rowname_1 = strdup(argv[2]);
 	filename_2 = strdup(argv[3]);
@@ -74,17 +74,17 @@ int getrownumber(char * filename,char * rowname)
 	char * temp = NULL;
 	temp = (char *)malloc(sizeof(char)*LINELENGTH);
 	puffer = (char *)malloc(sizeof(char)*LINELENGTH);
-
+	
 	FILE * filepointer;
 	filepointer = fopen(filename,"r");
-
+	
 	if (fgets(puffer,LINELENGTH,filepointer)!=NULL)
 	{
 		char * eol = rindex(puffer,'\n');
 		if (eol != NULL) *eol='\0';
 		eol = rindex(puffer,'\r');
 		if (eol != NULL) *eol='\0';
-
+		
 		temp = strtok(puffer, "\t");
 		while(strcmp(temp,rowname) != 0)
 		{
@@ -146,17 +146,18 @@ char ** getlinesarray(char * filename, int *numberoflines, int rowtoget)
 	return lines;
 }
 
-char * getidfromfile(const void *p)
+char * getidfromline(const void *p)
 {
 	char * temp = NULL;
 	temp = (char *)malloc(sizeof(char)*LINELENGTH);
 	strcpy(temp,* (char * const *) p);
-	strtok(temp, "\t");	
+	strtok(temp, "\t");
+	//printf("%s\n",(const char*)temp);
 	return temp;
 }
 int cmpids(const void *a, const void *b)
 {
-	return strcmp(getidfromfile(a), getidfromfile(b));
+	return strcmp(getidfromline(a), getidfromline(b));
 }
 
 int cmplines(const void *a, const void *b)
@@ -173,12 +174,44 @@ void Free()
 	free(output);
 }
 
+char ** comparelines(char **list_1, char** list_2, int numberoflines_1, int numberoflines_2, int *numberoflines)
+{
+	char ** lines = NULL;
+	int i = 0;
+	*numberoflines = 0;
+	char * item = NULL;
+	for(i=0; i < numberoflines_2; i++)
+	{
+		item = "nm1631269";//test
+		//item = getidfromline(list_2[i]);
+		item = bsearch (&item, list_1, numberoflines_1, sizeof (char*), cmpids);//search for this id
+		printtime();
+		if(item != NULL)
+		{
+			char *temp = malloc(sizeof(char) * 2 * LINELENGTH);
+			*numberoflines = *numberoflines + 1;
+			printf("found item: '%s'\n", *(const char**)item);
+			lines = realloc(lines, sizeof(char) * LINELENGTH * 2 * *numberoflines);//erweitert char ** immer dynamisch um ein Element
+			strcat(temp, list_2[i]);
+			strcat(temp, "\t");
+			//cut imdb id before combining
+			strcat(temp, *(const char**)item);				
+			lines[*numberoflines - 1] = temp;
+		}
+		else 
+		{
+			printf("item could not be found\n");
+		}
+	}
+	return lines;
+}
+
 int main(int argi, char **argv)
 {
 	int i = 0;
 	if(strcmp(argv[1],"--test") == 0) test_loadarguments();
 	else loadarguments(argi, argv);
-
+	
 	clear();
 	printf("+---------------------------------------------------+\n");
 	printf("|                     Reconcile                     |\n");
@@ -202,14 +235,6 @@ int main(int argi, char **argv)
 	//for(i=0; i < numberoflines_1; i++) printf("%s\n",list_1[i]);
 	
 	printtime();
-	printf("searching %s …\n", filename_1);
-	char *item = "nm0197824";//test
-	item = bsearch (&item, list_1, numberoflines_1, sizeof (char*), cmpids);
-	printtime();
-	if(item != NULL) printf("found item: '%s'\n", *(const char**)item);
-	else printf("item %s could not be found\n", item);
-
-	printtime();
 	printf("reading %s …\n", filename_2);
 	filecheck(filename_2);
 	int rowtoget_2 = getrownumber(filename_2, rowname_2);
@@ -217,6 +242,13 @@ int main(int argi, char **argv)
 	char ** list_2 = getlinesarray(filename_2, &numberoflines_2, rowtoget_2);
 	//for(i = 0 ; i < numberoflines_2 ; i++) printf("%s\n", list_2[i]);
 	
+	printtime();
+	printf("searching %s …\n", filename_1);
+	int numberofcombinedlines = 0;
+	char ** comparedlines = comparelines(list_1, list_2, numberoflines_1, numberoflines_2, &numberofcombinedlines);
+	for(i = 0 ; i < numberofcombinedlines ; i++) printf("%s\n", comparedlines[i]);
+	printf("Successfull ended!\n");
+		
 	Free();
 	return 0;
 }
