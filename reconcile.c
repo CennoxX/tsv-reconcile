@@ -230,7 +230,7 @@ char ** comparelines(char **list_1, char** list_2, int numberoflines_1, int numb
 		}
 		else 
 		{
-			printf("item could not be found\n");
+			//printf("item could not be found\n");
 		}
 	}
 	return lines;
