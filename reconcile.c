@@ -270,9 +270,10 @@ int main(int argi, char **argv)
 	int numberoflines_1 = getnumberoflines(filename_1);
 	char ** list_1 = getlinesarray(filename_1, numberoflines_1, rowtoget_1);
 	//for(i=0; i < numberoflines_1; i++) printf("%s\n",list_1[i]);
+	printf("\rreading %s 100%%\n", filename_1);
 	
 	//sort file 1
-	printf("\nsorting %s …", filename_1);
+	printf("sorting %s …", filename_1);
 	qsort(list_1, numberoflines_1, sizeof(char*), cmplines);
 	//for(i=0; i < numberoflines_1; i++) printf("%s\n",list_1[i]);
 	printf("\rsorting %s 100%%\n", filename_1);
@@ -283,18 +284,19 @@ int main(int argi, char **argv)
 	int numberoflines_2 = getnumberoflines(filename_2);
 	char ** list_2 = getlinesarray(filename_2, numberoflines_2, rowtoget_2);
 	//for(i = 0 ; i < numberoflines_2 ; i++) printf("%s\n", list_2[i]);
+	printf("\rreading %s 100%%\n", filename_2);
 	
 	//search in file 1
-	printf("\n");
 	int numberofcombinedlines = 0;
 	char ** comparedlines = comparelines(list_1, list_2, numberoflines_1, numberoflines_2, &numberofcombinedlines);
 	//for(i = 0 ; i < numberofcombinedlines ; i++) printf("%s\n", comparedlines[i]);
+	printf("\rsearching %s 100%%\n", filename_1);
 	
 	//write output
-	printf("\n");
 	writetofile(comparedlines, output, numberofcombinedlines);
-		
+	printf("\rwriting %s 100%%\n", output);
+	
 	Free();
-	printf("\nReconciling successfull!\n");
+	printf("Reconciling successfull!\n");
 	return 0;
 }
