@@ -10,13 +10,6 @@ char * rowname_1 = NULL;
 char * filename_2 = NULL;
 char * rowname_2 = NULL;
 char * output = NULL;
-int idrowtoget = 0;
-
-void printtime(){
-	time_t t = time(NULL);
-	struct tm tm = *localtime(&t);
-	printf("%d:%d:%d: ", tm.tm_hour, tm.tm_min, tm.tm_sec);
-}
 
 void clear(){
 	#if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
@@ -61,7 +54,6 @@ void filecheck(char *filename)
 	}
 	else
 	{
-		printtime();
 		printf("%s existiert nicht oder der Zugriff auf die Datei wird verweigert.\n", filename);
 		exit(0);
 	}
@@ -136,8 +128,7 @@ char ** getlinesarray(char * filename, int numberoflines, int rowtoget)
 	{
 		if((numberoflines/100) != 0 && 0 == i % (numberoflines/100))
 		{
-			printtime();
-			printf("reading %s %d%%\n", filename_2, i/(numberoflines/100));	
+			printf("\rreading %s %d%%", filename, i/(numberoflines/100));	
 		}
 		char * eol = rindex(buffer,'\n');
 		if (eol != NULL) *eol='\0';
@@ -208,18 +199,22 @@ void Free()
 char ** comparelines(char **list_1, char** list_2, int numberoflines_1, int numberoflines_2, int *numberoflines)
 {
 	char ** lines = NULL;
+	lines = realloc(lines, sizeof(char) * LINELENGTH * 2 * numberoflines_2);
 	int i = 0;
 	*numberoflines = 0;
 	char * item = NULL;
 	for(i=0; i < numberoflines_2; i++)
 	{
+		if((numberoflines_2/100) != 0 && 0 == i % (numberoflines_2/100))
+		{
+			printf("\rsearching %s %d%%", filename_2, i/(numberoflines_2/100));	
+		}
 		item = getidfromlinechar(list_2[i]);
 		item = bsearch (&item, list_1, numberoflines_1, sizeof (char*), cmpids);
 		if(item != NULL)
 		{
 			char *temp = malloc(sizeof(char) * 2 * LINELENGTH);
 			*numberoflines = *numberoflines + 1;
-			lines = realloc(lines, sizeof(char) * LINELENGTH * 2 * *numberoflines);
 			strcat(temp, list_2[i]);
 			strcat(temp, "\t");
             char *buffer = strdup(*(char**)item);
@@ -245,6 +240,10 @@ void writetofile(char ** lines, char * filename, int numberoflines)
 
 	for(i = 0 ; i < numberoflines ; i++)
 	{
+		if((numberoflines/100) != 0 && 0 == i % (numberoflines/100))
+		{
+			printf("\rwriting %s %d%%", output, i/(numberoflines/100));	
+		}
 		fprintf(filepointer, "%s\n", lines[i]);
 	}
 
@@ -260,42 +259,42 @@ int main(int argi, char **argv)
 	printf("+---------------------------------------------------+\n");
 	printf("|                     Reconcile                     |\n");
 	printf("|                                                   |\n");
-	printf("|       reconcile two tab spearated value files     |\n");
-	printf("|             by one shared row (e.g. imdb)         |\n");
+	printf("|      reconcile two tab spearated value files      |\n");
+	printf("|          by one shared row (e.g. imdb id)         |\n");
 	printf("|                                                   |\n");
 	printf("+---------------------------------------------------+\n");
 	
+	//read file 1
 	filecheck(filename_1);
 	int rowtoget_1 = getrownumber(filename_1, rowname_1);
 	int numberoflines_1 = getnumberoflines(filename_1);
 	char ** list_1 = getlinesarray(filename_1, numberoflines_1, rowtoget_1);
 	//for(i=0; i < numberoflines_1; i++) printf("%s\n",list_1[i]);
 	
-	printtime();
-	printf("sorting %s …\n", filename_1);
+	//sort file 1
+	printf("\nsorting %s …", filename_1);
 	qsort(list_1, numberoflines_1, sizeof(char*), cmplines);
 	//for(i=0; i < numberoflines_1; i++) printf("%s\n",list_1[i]);
+	printf("\rsorting %s 100%%\n", filename_1);
 	
-	printtime();
-	printf("reading %s …\n", filename_2);	
+	//read file 2
 	filecheck(filename_2);
 	int rowtoget_2 = getrownumber(filename_2, rowname_2);
 	int numberoflines_2 = getnumberoflines(filename_2);
 	char ** list_2 = getlinesarray(filename_2, numberoflines_2, rowtoget_2);
 	//for(i = 0 ; i < numberoflines_2 ; i++) printf("%s\n", list_2[i]);
 	
-	printtime();
-	printf("searching %s …\n", filename_1);
+	//search in file 1
+	printf("\n");
 	int numberofcombinedlines = 0;
 	char ** comparedlines = comparelines(list_1, list_2, numberoflines_1, numberoflines_2, &numberofcombinedlines);
 	//for(i = 0 ; i < numberofcombinedlines ; i++) printf("%s\n", comparedlines[i]);
-
-	printtime();
-	printf("writing %s …\n", output);
+	
+	//write output
+	printf("\n");
 	writetofile(comparedlines, output, numberofcombinedlines);
 		
 	Free();
-	printtime();
-	printf("Successfull!\n");
+	printf("\nReconciling successfull!\n");
 	return 0;
 }
