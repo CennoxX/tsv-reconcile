@@ -122,25 +122,6 @@ char *getsortedline(char * puffer, int rowtoget)
 	return imdbId;
 }
 
-char *removeRow(char * puffer, int rowtoget)
-{
-	char *toktemp = strtok(puffer, "\t");
-	char *row = malloc(sizeof(char) * LINELENGTH);
-	strcpy(row, "");
-	int i = 0;
-	while(toktemp != NULL)
-	{
-		if(i != rowtoget)
-		{
-			strcat(row, "\t");
-			strcat(row, toktemp);
-		}
-		toktemp = strtok(NULL, "\t");
-		i++;
-	}
-	return row;
-}
-
 char ** getlinesarray(char * filename, int *numberoflines, int rowtoget)
 {
 	char * puffer = NULL;
@@ -181,7 +162,6 @@ char * getidfromlinechar(const char *p)
 	temp = (char *)malloc(sizeof(char)*LINELENGTH);
 	strcpy(temp, p);
 	strtok(temp, "\t");
-	//printf("%s\n",(const char*)temp);
 	return temp;
 }
 
@@ -212,25 +192,20 @@ char ** comparelines(char **list_1, char** list_2, int numberoflines_1, int numb
 	char * item = NULL;
 	for(i=0; i < numberoflines_2; i++)
 	{
-		//item = "nm1631269";//test
 		item = getidfromlinechar(list_2[i]);
 		item = bsearch (&item, list_1, numberoflines_1, sizeof (char*), cmpids);//search for this id
 		if(item != NULL)
 		{
 			char *temp = malloc(sizeof(char) * 2 * LINELENGTH);
 			*numberoflines = *numberoflines + 1;
-			//printf("found item: '%s'\n", *(const char**)item);
 			lines = realloc(lines, sizeof(char) * LINELENGTH * 2 * *numberoflines);//erweitert char ** immer dynamisch um ein Element
 			strcat(temp, list_2[i]);
 			strcat(temp, "\t");
-			//cut imdb id before combining
-			char *item2 = removeRow(*(char**)item, 0);
-			strcat(temp, item2);		
+            char *puffer = strdup(*(char**)item);
+            char *item2 = strtok(puffer, "\t");
+            item2 = strtok(NULL, "");
+			strcat(temp, item2);
 			lines[*numberoflines - 1] = temp;
-		}
-		else 
-		{
-			//printf("item could not be found\n");
 		}
 	}
 	return lines;
@@ -243,7 +218,7 @@ void writetofile(char ** lines, char * filename, int numberOfLines)
 	filepointer = fopen(filename, "w");
 	if(filepointer == NULL)
 	{
-		printf("File %s does not exists\n", filename);
+		printf("File %s does not exist or you do not have read access.\n", filename);
 		return;
 	}
 
@@ -292,17 +267,16 @@ int main(int argi, char **argv)
 	
 	printtime();
 	printf("searching %s …\n", filename_1);
-	int numberofcombinedlines = 0;	
+	int numberofcombinedlines = 0;
 	char ** comparedlines = comparelines(list_1, list_2, numberoflines_1, numberoflines_2, &numberofcombinedlines);
-
 	//for(i = 0 ; i < numberofcombinedlines ; i++) printf("%s\n", comparedlines[i]);
-	printtime();
-	printf("Successfull ended!\n");
 
 	printtime();
-	printf("write to File %s\n", output);
+	printf("writing %s\n", output);
 	writetofile(comparedlines, output, numberofcombinedlines);
 		
 	Free();
+	printtime();
+	printf("Successfull!\n");
 	return 0;
 }
