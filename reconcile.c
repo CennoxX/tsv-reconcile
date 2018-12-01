@@ -10,13 +10,6 @@ char * rowname_1 = NULL;
 char * filename_2 = NULL;
 char * rowname_2 = NULL;
 char * output = NULL;
-int idrowtoget = 0;
-
-void printtime(){
-	time_t t = time(NULL);
-	struct tm tm = *localtime(&t);
-	printf("%d:%d:%d: ", tm.tm_hour, tm.tm_min, tm.tm_sec);
-}
 
 void clear(){
 	#if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
@@ -61,7 +54,6 @@ void filecheck(char *filename)
 	}
 	else
 	{
-		printtime();
 		printf("%s existiert nicht oder der Zugriff auf die Datei wird verweigert.\n", filename);
 		exit(0);
 	}
@@ -69,37 +61,37 @@ void filecheck(char *filename)
 
 int getrownumber(char * filename,char * rowname)
 {
-	char * puffer = NULL;
+	char * buffer = NULL;
 	int rowtoget = 0;
 	char * temp = NULL;
 	temp = (char *)malloc(sizeof(char)*LINELENGTH);
-	puffer = (char *)malloc(sizeof(char)*LINELENGTH);
+	buffer = (char *)malloc(sizeof(char)*LINELENGTH);
 	
 	FILE * filepointer;
 	filepointer = fopen(filename,"r");
 	
-	if (fgets(puffer,LINELENGTH,filepointer)!=NULL)
+	if (fgets(buffer,LINELENGTH,filepointer)!=NULL)
 	{
-		char * eol = rindex(puffer,'\n');
+		char * eol = rindex(buffer,'\n');
 		if (eol != NULL) *eol='\0';
-		eol = rindex(puffer,'\r');
+		eol = rindex(buffer,'\r');
 		if (eol != NULL) *eol='\0';
 		
-		temp = strtok(puffer, "\t");
+		temp = strtok(buffer, "\t");
 		while(strcmp(temp,rowname) != 0)
 		{
 			rowtoget++;
 			temp = strtok(NULL, "\t");
 		}
 	}
-	free(puffer);
+	free(buffer);
 	fclose(filepointer);
 	return rowtoget;
 }
 
-char *getsortedline(char * puffer, int rowtoget)
+char *getsortedline(char * buffer, int rowtoget)
 {
-	char *toktemp = strtok(puffer, "\t");
+	char *toktemp = strtok(buffer, "\t");
 	char *row = malloc(sizeof(char) * LINELENGTH);
 	strcpy(row, "");
 	char *imdbId = malloc(sizeof(char) * LINELENGTH);
@@ -122,52 +114,57 @@ char *getsortedline(char * puffer, int rowtoget)
 	return imdbId;
 }
 
-char *removeRow(char * puffer, int rowtoget)
+char ** getlinesarray(char * filename, int numberoflines, int rowtoget, char * list_header)
 {
-	char *toktemp = strtok(puffer, "\t");
-	char *row = malloc(sizeof(char) * LINELENGTH);
-	strcpy(row, "");
-	int i = 0;
-	while(toktemp != NULL)
-	{
-		if(i != rowtoget)
-		{
-			strcat(row, "\t");
-			strcat(row, toktemp);
-		}
-		toktemp = strtok(NULL, "\t");
-		i++;
-	}
-	return row;
-}
-
-char ** getlinesarray(char * filename, int *numberoflines, int rowtoget, char * list_header)
-{
-	char * puffer = NULL;
-	char ** lines = NULL;		  
-	*numberoflines = 0;
+	char * buffer = NULL;
+	char ** lines = NULL;
+	lines = realloc(lines, sizeof(char) * LINELENGTH * numberoflines);	
 	FILE * filepointer;
 	filepointer = fopen(filename,"r");
-	puffer = (char *) malloc(sizeof(char)*LINELENGTH);
-	fgets(list_header,LINELENGTH,filepointer);
-	char * eol = rindex(list_header,'\n');
+	buffer = (char *) malloc(sizeof(char)*LINELENGTH);
+	char * tempHeader = malloc(sizeof(char) * LINELENGTH);
+	fgets(tempHeader,LINELENGTH,filepointer);
+	char * eol = rindex(tempHeader,'\n');
 	if (eol != NULL) *eol='\0';
-	eol = rindex(list_header,'\r');
+	eol = rindex(tempHeader,'\r');
 	if (eol != NULL) *eol='\0';
+	strcpy(list_header,getsortedline(tempHeader, rowtoget));
 
-	while (fgets(puffer,LINELENGTH,filepointer) != NULL)
+
+	int i = 0;
+	while (fgets(buffer,LINELENGTH,filepointer) != NULL)
 	{
-		char * eol = rindex(puffer,'\n');
+		if((numberoflines/100) != 0 && 0 == i % (numberoflines/100))
+		{
+			printf("\rreading %s %d%%", filename, i/(numberoflines/100));	
+		}
+		char * eol = rindex(buffer,'\n');
 		if (eol != NULL) *eol='\0';
-		eol = rindex(puffer,'\r');
+		eol = rindex(buffer,'\r');
 		if (eol != NULL) *eol='\0';
-		*numberoflines = *numberoflines + 1;
-		lines = realloc(lines, sizeof(char) * LINELENGTH * *numberoflines);//erweitert char ** immer dynamisch um ein Element
-		lines[*numberoflines - 1] = getsortedline(puffer,rowtoget);
+		lines[i] = getsortedline(buffer,rowtoget);
+		i++;
 	}
-	free(puffer);
+	free(buffer);
 	fclose(filepointer);
 	return lines;
+}
+
+int getnumberoflines(char * filename)
+{
+	char * buffer = NULL;	  
+	int numberoflines = 0;
+	FILE * filepointer;
+	filepointer = fopen(filename,"r");
+	buffer = (char *) malloc(sizeof(char)*LINELENGTH);
+	fgets(buffer,LINELENGTH,filepointer);
+	while (fgets(buffer,LINELENGTH,filepointer) != NULL)
+	{
+		numberoflines++;
+	}
+	free(buffer);
+	fclose(filepointer);
+	return numberoflines;
 }
 
 char * getidfromline(const void *p)
@@ -176,7 +173,6 @@ char * getidfromline(const void *p)
 	temp = (char *)malloc(sizeof(char)*LINELENGTH);
 	strcpy(temp,* (char * const *) p);
 	strtok(temp, "\t");
-	//printf("%s\n",(const char*)temp);
 	return temp;
 }
 
@@ -186,7 +182,6 @@ char * getidfromlinechar(const char *p)
 	temp = (char *)malloc(sizeof(char)*LINELENGTH);
 	strcpy(temp, p);
 	strtok(temp, "\t");
-	//printf("%s\n",(const char*)temp);
 	return temp;
 }
 
@@ -212,54 +207,78 @@ void Free()
 char ** comparelines(char **list_1, char** list_2, int numberoflines_1, int numberoflines_2, int *numberoflines)
 {
 	char ** lines = NULL;
+	lines = realloc(lines, sizeof(char) * LINELENGTH * 2 * numberoflines_2);
 	int i = 0;
 	*numberoflines = 0;
 	char * item = NULL;
 	for(i=0; i < numberoflines_2; i++)
 	{
-		//item = "nm1631269";//test
+		if((numberoflines_2/100) != 0 && 0 == i % (numberoflines_2/100))
+		{
+			printf("\rsearching %s %d%%", filename_2, i/(numberoflines_2/100));	
+		}
 		item = getidfromlinechar(list_2[i]);
-		item = bsearch (&item, list_1, numberoflines_1, sizeof (char*), cmpids);//search for this id
+		item = bsearch (&item, list_1, numberoflines_1, sizeof (char*), cmpids);
 		if(item != NULL)
 		{
 			char *temp = malloc(sizeof(char) * 2 * LINELENGTH);
 			*numberoflines = *numberoflines + 1;
-			//printf("found item: '%s'\n", *(const char**)item);
-			lines = realloc(lines, sizeof(char) * LINELENGTH * 2 * *numberoflines);//erweitert char ** immer dynamisch um ein Element
 			strcat(temp, list_2[i]);
 			strcat(temp, "\t");
-			//cut imdb id before combining
-			char *item2 = removeRow(*(char**)item, 0);
-			strcat(temp, item2);		
+            char *buffer = strdup(*(char**)item);
+            char *item2 = strtok(buffer, "\t");
+            item2 = strtok(NULL, "");
+			strcat(temp, item2);
 			lines[*numberoflines - 1] = temp;
-		}
-		else 
-		{
-			//	printf("item could not be found\n");
 		}
 	}
 	return lines;
 }
 
-void writetofile(char ** lines, char * filename, int numberOfLines, char * header)
+void writetofile(char ** lines, char * filename, int numberoflines, char * header)
 {
 	int i = 0;
 	FILE *filepointer;
 	filepointer = fopen(filename, "w");
 	if(filepointer == NULL)
 	{
-		printf("File %s does not exists\n", filename);
-		return;
+		printf("Der Zugriff auf die Datei %s wird verweigert.\n", filename);
+		exit(0);
 	}
 
 	fprintf(filepointer, "%s\n", header);
-	for(i = 0 ; i < numberOfLines ; i++)
+
+	for(i = 0 ; i < numberoflines ; i++)
 	{
+		if((numberoflines/100) != 0 && 0 == i % (numberoflines/100))
+		{
+			printf("\rwriting %s %d%%", output, i/(numberoflines/100));	
+		}
 		fprintf(filepointer, "%s\n", lines[i]);
 	}
 
 	fclose(filepointer);
 }
+
+char *removeRow(char * puffer, int rowtoget)
+{
+	char *toktemp = strtok(puffer, "\t");
+	char *row = malloc(sizeof(char) * LINELENGTH);
+	strcpy(row, "");
+	int i = 0;
+	while(toktemp != NULL)
+	{
+		if(i != rowtoget)
+		{
+			strcat(row, "\t");
+			strcat(row, toktemp);
+		}
+		toktemp = strtok(NULL, "\t");
+		i++;
+	}
+	return row;
+}
+
 int main(int argi, char **argv)
 {
 	int i = 0;
@@ -270,54 +289,54 @@ int main(int argi, char **argv)
 	printf("+---------------------------------------------------+\n");
 	printf("|                     Reconcile                     |\n");
 	printf("|                                                   |\n");
-	printf("|       reconcile two tab spearated value files     |\n");
-	printf("|             by one shared row (e.g. imdb)         |\n");
+	printf("|      reconcile two tab spearated value files      |\n");
+	printf("|          by one shared row (e.g. imdb id)         |\n");
 	printf("|                                                   |\n");
 	printf("+---------------------------------------------------+\n");
 	
-	printtime();
-	printf("reading %s …\n", filename_1);
+	//read file 1
 	filecheck(filename_1);
 	int rowtoget_1 = getrownumber(filename_1, rowname_1);
-	int numberoflines_1 = 0;
+	int numberoflines_1 = getnumberoflines(filename_1);
 	char * list1_header = malloc(sizeof(char) * LINELENGTH);
-	char ** list_1 = getlinesarray(filename_1, &numberoflines_1, rowtoget_1, list1_header);
-	//printf("Header: %s\n", list1_header);
+	char ** list_1 = getlinesarray(filename_1, numberoflines_1, rowtoget_1, list1_header);
+	printf("Header: %s\n", list1_header);
 	//for(i=0; i < numberoflines_1; i++) printf("%s\n",list_1[i]);
+	printf("\rreading %s 100%%\n", filename_1);
 	
-	printtime();
-	printf("sorting %s …\n", filename_1);
+	//sort file 1
+	printf("sorting %s …", filename_1);
 	qsort(list_1, numberoflines_1, sizeof(char*), cmplines);
 	//for(i=0; i < numberoflines_1; i++) printf("%s\n",list_1[i]);
+	printf("\rsorting %s 100%%\n", filename_1);
 	
-	printtime();
-	printf("reading %s …\n", filename_2);
+	//read file 2
 	filecheck(filename_2);
 	int rowtoget_2 = getrownumber(filename_2, rowname_2);
-	int numberoflines_2 = 0;
+	int numberoflines_2 = getnumberoflines(filename_2);
 	char * list2_header = malloc(sizeof(char) * LINELENGTH);
-	char ** list_2 = getlinesarray(filename_2, &numberoflines_2, rowtoget_2, list2_header);
-	//printf("Header: %s\n", list2_header);
+	char ** list_2 = getlinesarray(filename_2, numberoflines_2, rowtoget_2, list2_header);
+	printf("Header: %s\n", list2_header);
 	//for(i = 0 ; i < numberoflines_2 ; i++) printf("%s\n", list_2[i]);
+	printf("\rreading %s 100%%\n", filename_2);
 	
-	printtime();
-	printf("searching %s …\n", filename_1);
+	//search in file 1
 	int numberofcombinedlines = 0;
-	char * fullHeader = getsortedline(list1_header, rowtoget_1);
-	strcat(fullHeader, getsortedline(list2_header, rowtoget_2));
-	//printf("FullHeader: %s\n", fullHeader);
+	char * fullHeader = malloc(sizeof(char) * LINELENGTH);
+	strcat(fullHeader, list2_header);
+	strcat(fullHeader, removeRow(list1_header, 0));
+	printf("Header: %s\n", fullHeader);
+
 	char ** comparedlines = comparelines(list_1, list_2, numberoflines_1, numberoflines_2, &numberofcombinedlines);
-
 	//for(i = 0 ; i < numberofcombinedlines ; i++) printf("%s\n", comparedlines[i]);
-	printtime();
-	printf("Successfull ended!\n");
-
-	printtime();
-	printf("write to File %s\n", output);
+	printf("\rsearching %s 100%%\n", filename_2);
+	
+	//write output
 	writetofile(comparedlines, output, numberofcombinedlines, fullHeader);
 	free(fullHeader);
-
-		
+	printf("\rwriting %s 100%%\n", output);
+	
 	Free();
+	printf("Reconciling successfull!\n");
 	return 0;
 }
