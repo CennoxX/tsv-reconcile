@@ -48,7 +48,7 @@ void test_loadarguments()
 void filecheck(char *filename)
 {
 	FILE * filepointer;
-	if(filepointer = fopen(filename, "r"))
+	if((filepointer = fopen(filename, "r")))
 	{
 		fclose(filepointer);
 	}
@@ -262,8 +262,8 @@ void writetofile(char ** lines, char * filename, int numberoflines, char * heade
 
 int main(int argi, char **argv)
 {
-	int i = 0;
-	if(strcmp(argv[1],"--test") == 0) test_loadarguments();
+	//int i = 0;
+	if(argi == 2 && strcmp(argv[1],"--test") == 0) test_loadarguments();
 	else loadarguments(argi, argv);
 	
 	clear();
@@ -308,14 +308,12 @@ int main(int argi, char **argv)
 	strcat(listheader_2, "\t");
 	strcat(listheader_2, listheader_1);
 	//printf("header: %s\n", listheader_2);
-											
 	char ** comparedlines = comparelines(list_1, list_2, numberoflines_1, numberoflines_2, &numberofcombinedlines);
 	//for(i = 0 ; i < numberofcombinedlines ; i++) printf("%s\n", comparedlines[i]);
 	printf("\rsearching %s 100%%\n", filename_2);
 	
 	//write output
 	writetofile(comparedlines, output, numberofcombinedlines, listheader_2);
-	
 	printf("\rwriting %s 100%%\n", output);
 	
 	Free();
