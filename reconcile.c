@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <time.h>
 
 #define LINELENGTH 1024
 
@@ -11,14 +10,15 @@ char * filename_2 = NULL;
 char * rowname_2 = NULL;
 char * output = NULL;
 
-void clear(){
-	#if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
-		system("clear");
-	#endif
-	
-	#if defined(_WIN32) || defined(_WIN64)
-		system("cls");
-	#endif
+void clear()
+{
+#if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
+	system("clear");
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
+	system("cls");
+#endif
 }
 
 void loadarguments(int argi, char ** argv)
@@ -28,7 +28,7 @@ void loadarguments(int argi, char ** argv)
 		printf("format: %s <input file 1> <input row 1> <input file 2> <input row 2> <output file>\n", argv[0]);
 		exit(0);
 	}
-	
+		
 	filename_1 = strdup(argv[1]);
 	rowname_1 = strdup(argv[2]);
 	filename_2 = strdup(argv[3]);
@@ -36,19 +36,10 @@ void loadarguments(int argi, char ** argv)
 	output = strdup(argv[5]);
 }
 
-void test_loadarguments()
-{
-	filename_1 = strdup("imdb.tsv");
-	rowname_1 = strdup("imdb");
-	filename_2 = strdup("imdb2.tsv");
-	rowname_2 = strdup("IMDb ID");
-	output = strdup("output.tsv");
-}
-
-void filecheck(char * filename)
+void filecheck(char * filename, char * mode)
 {
 	FILE * filepointer;
-	if((filepointer = fopen(filename, "r")))
+	if (filepointer = fopen(filename, mode))
 	{
 		fclose(filepointer);
 	}
@@ -65,8 +56,7 @@ int getrownumber(char * filename, char * rowname)
 	char * temp = (char *)malloc(sizeof(char)*LINELENGTH);
 	char * buffer = (char *)malloc(sizeof(char)*LINELENGTH);
 	
-	FILE * filepointer;
-	filepointer = fopen(filename, "r");
+	FILE * filepointer = fopen(filename, "r");
 	
 	if (fgets(buffer, LINELENGTH, filepointer)!=NULL)
 	{
@@ -105,7 +95,7 @@ char * getsortedline(char * buffer, int rowtoget)
 		{
 			strcpy(imdbId, toktemp);
 		}
-		else 
+		else
 		{
 			strcat(row, "\t");
 			strcat(row, toktemp);
@@ -120,7 +110,7 @@ char * getsortedline(char * buffer, int rowtoget)
 char ** getlinesarray(char * filename, int numberoflines, int rowtoget, char * listheader)
 {
 	char ** lines = NULL;
-	lines = realloc(lines, sizeof(char) * LINELENGTH * numberoflines);	
+	lines = realloc(lines, sizeof(char) * LINELENGTH * numberoflines);
 	FILE * filepointer = fopen(filename, "r");
 	char * buffer = (char *) malloc(sizeof(char)*LINELENGTH);
 	char * tempheader = malloc(sizeof(char) * LINELENGTH);
@@ -131,13 +121,12 @@ char ** getlinesarray(char * filename, int numberoflines, int rowtoget, char * l
 	if (eol != NULL) * eol = '\0';
 	strcpy(listheader, getsortedline(tempheader, rowtoget));
 
-
 	int i = 0;
 	while (fgets(buffer, LINELENGTH, filepointer) != NULL)
 	{
 		if((numberoflines/100) != 0 && 0 == i % (numberoflines/100))
 		{
-			printf("\rreading %s %d%%", filename, i/(numberoflines/100));	
+			printf("\rreading %s %d%%", filename, i/(numberoflines/100));
 		}
 		char * eol = rindex(buffer, '\n');
 		if (eol != NULL) * eol = '\0';
@@ -153,7 +142,7 @@ char ** getlinesarray(char * filename, int numberoflines, int rowtoget, char * l
 
 int getnumberoflines(char * filename)
 {
-	char * buffer = (char *)malloc(sizeof(char)*LINELENGTH);	  
+	char * buffer = (char *)malloc(sizeof(char)*LINELENGTH);
 	int numberoflines = 0;
 	FILE * filepointer = fopen(filename, "r");
 	fgets(buffer, LINELENGTH, filepointer);
@@ -174,7 +163,7 @@ char * getidfromline(const void * p)
 	return temp;
 }
 
-char * getidfromlinechar(const char *p)
+char * getidfromcharline(const char *p)
 {
 	char * temp = (char *)malloc(sizeof(char)*LINELENGTH);
 	strcpy(temp, p);
@@ -212,9 +201,9 @@ char ** comparelines(char ** list_1, char ** list_2, int numberoflines_1, int nu
 	{
 		if((numberoflines_2/100) != 0 && 0 == i % (numberoflines_2/100))
 		{
-			printf("\rsearching %s %d%%", filename_2, i/(numberoflines_2/100));	
+			printf("\rsearching %s %d%%", filename_2, i/(numberoflines_2/100));
 		}
-		item = getidfromlinechar(list_2[i]);
+		item = getidfromcharline(list_2[i]);
 		item = bsearch (&item, list_1, numberoflines_1, sizeof (char*), cmpids);
 		if(item != NULL)
 		{
@@ -222,9 +211,9 @@ char ** comparelines(char ** list_1, char ** list_2, int numberoflines_1, int nu
 			* numberoflines = * numberoflines + 1;
 			strcat(temp, list_2[i]);
 			strcat(temp, "\t");
-            char * buffer = strdup(*(char**)item);
-            char * item2 = strtok(buffer, "\t");
-            item2 = strtok(NULL, "");
+			char * buffer = strdup(*(char**)item);
+			char * item2 = strtok(buffer, "\t");
+			item2 = strtok(NULL, "");
 			strcat(temp, item2);
 			lines[*numberoflines - 1] = temp;
 		}
@@ -242,22 +231,12 @@ char * writelistheader(char * listheader_1, char * listheader_2)
 void writetofile(char ** lines, char * filename, int numberoflines, char * header)
 {
 	int i = 0;
-	FILE * filepointer;
-	filepointer = fopen(filename, "w");
-	if(filepointer == NULL)
-	{
-		printf("The access to the file %s has been denied.\n", filename);
-		exit(0);
-	}
-
+	FILE * filepointer = fopen(filename, "w");
 	fprintf(filepointer, "%s\n", header);
 
-	for(i = 0 ; i < numberoflines ; i++)
+	for(i = 0; i < numberoflines; i++)
 	{
-		if((numberoflines/100) != 0 && 0 == i % (numberoflines/100))
-		{
-			printf("\rwriting %s %d%%", output, i/(numberoflines/100));	
-		}
+		if((numberoflines/100) != 0 && 0 == i % (numberoflines/100)) printf("\rwriting %s %d%%", output, i/(numberoflines/100));
 		fprintf(filepointer, "%s\n", lines[i]);
 	}
 
@@ -266,21 +245,15 @@ void writetofile(char ** lines, char * filename, int numberoflines, char * heade
 
 int main(int argi, char ** argv)
 {
-	//int i = 0;
-	if(argi == 2 && strcmp(argv[1], "--test") == 0) test_loadarguments();
-	else loadarguments(argi, argv);
-	
 	clear();
-	printf("+---------------------------------------------------+\n");
-	printf("|                     Reconcile                     |\n");
-	printf("|                                                   |\n");
-	printf("|      reconcile two tab spearated value files      |\n");
-	printf("|          by one shared row (e.g. imdb id)         |\n");
-	printf("|                                                   |\n");
-	printf("+---------------------------------------------------+\n");
+	printf(">> reconcile\n");
+	
+	loadarguments(argi, argv);
+	filecheck(filename_1, "r");
+	filecheck(filename_2, "r");
+	filecheck(output, "w");
 	
 	//read file 1
-	filecheck(filename_1);
 	int rowtoget_1 = getrownumber(filename_1, rowname_1);
 	int numberoflines_1 = getnumberoflines(filename_1);
 	char * listheader_1 = malloc(sizeof(char) * LINELENGTH);
@@ -293,7 +266,6 @@ int main(int argi, char ** argv)
 	printf("\rsorting %s 100%%\n", filename_1);
 	
 	//read file 2
-	filecheck(filename_2);
 	int rowtoget_2 = getrownumber(filename_2, rowname_2);
 	int numberoflines_2 = getnumberoflines(filename_2);
 	char * listheader_2 = malloc(sizeof(char) * LINELENGTH);
