@@ -39,7 +39,7 @@ void loadarguments(int argi, char ** argv)
 void filecheck(char * filename, char * mode)
 {
 	FILE * filepointer;
-	if ((filepointer = fopen(filename, mode))
+	if (filepointer = fopen(filename, mode))
 	{
 		fclose(filepointer);
 	}
