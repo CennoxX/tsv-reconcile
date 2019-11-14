@@ -1,4 +1,7 @@
 # tsv reconcile
+
+![](https://github.com/cennoxx/tsv-reconcile/workflows/C/C++%20CI/badge.svg)
+
 **tsv reconcile** can be used to reconcile two tab-separated value files by one shared row.
 To build the C program simply call `make` in the downloaded folder.
 The input format for the command line is:
